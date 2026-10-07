@@ -10,13 +10,13 @@ import {
   FaBuilding,
   FaFlask,
   FaBed,
-   FaCog,
+  FaCog,
 } from "react-icons/fa";
 
 function Sidebar() {
   const menuItems = [
     {
-      path: "/",
+      path: "/dashboard",
       icon: <FaTachometerAlt />,
       emoji: "🏠",
       name: "Dashboard",
@@ -64,7 +64,7 @@ function Sidebar() {
       bg: "#eaf8ef",
     },
     {
-      path: "/department",
+      path: "/departments",
       icon: <FaBuilding />,
       emoji: "🏥",
       name: "Departments",
@@ -87,14 +87,14 @@ function Sidebar() {
       color: "#c0392b",
       bg: "#fcebea",
     },
-{
-  path: "/settings",
-  icon: <FaCog />,
-  emoji: "⚙️",
-  name: "Settings",
-  color: "#8e44ad",
-  bg: "#f4ecf7",
-}
+    {
+      path: "/settings",
+      icon: <FaCog />,
+      emoji: "⚙️",
+      name: "Settings",
+      color: "#8e44ad",
+      bg: "#f4ecf7",
+    },
   ];
 
   return (

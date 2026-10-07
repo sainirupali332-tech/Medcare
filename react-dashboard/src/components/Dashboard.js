@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+
 import {
   FaUserInjured,
   FaUserMd,
@@ -15,15 +16,19 @@ import {
   FaUserClock,
   FaCircle,
   FaPhoneAlt,
+  FaSignOutAlt,
 } from "react-icons/fa";
 
 function Dashboard() {
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const API = "http://localhost:5000/api";
+
+  // =====================================================
+  // LOAD DASHBOARD DATA
+  // =====================================================
 
   const loadData = async () => {
     try {
@@ -35,11 +40,15 @@ function Dashboard() {
         ]);
 
       setPatients(
-        Array.isArray(patientsRes.data) ? patientsRes.data : []
+        Array.isArray(patientsRes.data)
+          ? patientsRes.data
+          : []
       );
 
       setDoctors(
-        Array.isArray(doctorsRes.data) ? doctorsRes.data : []
+        Array.isArray(doctorsRes.data)
+          ? doctorsRes.data
+          : []
       );
 
       setAppointments(
@@ -48,11 +57,13 @@ function Dashboard() {
           : []
       );
     } catch (error) {
-      console.error("Dashboard Error:", error);
-    } finally {
-      setLoading(false);
+      console.log("Dashboard API Error:", error);
     }
   };
+
+  // =====================================================
+  // LOAD DATA
+  // =====================================================
 
   useEffect(() => {
     loadData();
@@ -64,387 +75,803 @@ function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const today = new Date().toISOString().split("T")[0];
+  // =====================================================
+  // LOGOUT
+  // =====================================================
 
-  const todayAppointments = appointments.filter((item) => {
-    if (!item.appointmentdate) return false;
+  const handleLogout = () => {
+  localStorage.removeItem("isLoggedIn");
+  localStorage.removeItem("loggedInUser");
+  localStorage.removeItem("loggedInEmail");
+  localStorage.removeItem("username");
 
-    return String(item.appointmentdate).split("T")[0] === today;
-  });
+  window.location.href = "/";
+};
 
-  const recentPatients = [...patients].reverse().slice(0, 5);
-
-  const upcomingAppointments = [...appointments]
-    .filter((item) => {
-      if (!item.appointmentdate) return false;
-      return String(item.appointmentdate).split("T")[0] >= today;
-    })
-    .sort((a, b) => {
-      return (
-        new Date(a.appointmentdate) -
-        new Date(b.appointmentdate)
-      );
-    })
-    .slice(0, 5);
+  // =====================================================
+  // NAVIGATION
+  // =====================================================
 
   const goTo = (page) => {
     window.location.href = page;
   };
 
+  // =====================================================
+  // DATE
+  // =====================================================
+
+  const today = new Date();
+
+  const todayString = today.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  // =====================================================
+  // TODAY APPOINTMENTS
+  // =====================================================
+
+  const todayAppointments = appointments.filter((item) => {
+    if (!item.appointmentdate) return false;
+
+    const appointmentDate = new Date(
+      item.appointmentdate
+    );
+
+    return (
+      appointmentDate.toDateString() ===
+      today.toDateString()
+    );
+  });
+
+  // =====================================================
+  // RECENT PATIENTS
+  // =====================================================
+
+  const recentPatients = patients.slice(0, 5);
+
+  // =====================================================
+  // UPCOMING APPOINTMENTS
+  // =====================================================
+
+  const upcomingAppointments = appointments.slice(0, 5);
+
+  // =====================================================
+  // FORMAT DATE
+  // =====================================================
+
   const formatDate = (date) => {
-    if (!date) return "-";
+    if (!date) return "N/A";
 
-    const d = new Date(date);
-
-    if (isNaN(d.getTime())) return date;
-
-    return d.toLocaleDateString("en-IN", {
+    return new Date(date).toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
   };
 
-  const getInitial = (name) => {
-    if (!name) return "P";
-
-    return name.charAt(0).toUpperCase();
-  };
-
   return (
     <div className="dashboard-page">
 
-      {/* ================= HEADER ================= */}
-      <div className="dashboard-header">
-        <div>
-          <div className="welcome-small">
-            <FaHeartbeat />
-            Hospital Management System
-          </div>
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
-          <h1>Good Morning 👋</h1>
+      <div className="dashboard-header">
+
+        <div className="header-left">
+          <h1>Hospital Management System</h1>
 
           <p>
-            Welcome back. Here's what's happening in your hospital today.
+            <FaHeartbeat />
+            Good Morning, Admin
           </p>
         </div>
 
         <div className="header-right">
+
           <div className="live-status">
             <FaCircle />
             Live System
           </div>
 
-          <div className="date-box">
+          <div className="header-date">
             <FaClock />
-            {new Date().toLocaleDateString("en-IN", {
-              weekday: "short",
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })}
+            {todayString}
           </div>
-        </div>
-      </div>
 
-      {/* ================= HOSPITAL BANNER ================= */}
-      <div className="hospital-banner">
-        <div className="banner-icon">
-          <FaHospital />
-        </div>
-
-        <div className="banner-content">
-          <h2>MedCare Hospital</h2>
-
-          <p>
-            Complete hospital management at your fingertips.
-            Manage patients, doctors and appointments easily.
-          </p>
-        </div>
-
-        <div className="banner-actions">
-          <button onClick={() => goTo("/patients")}>
-            <FaPlus />
-            Add Patient
-          </button>
+          {/* LOGOUT BUTTON */}
 
           <button
-            className="light-btn"
-            onClick={() => goTo("/appointments")}
+            className="logout-btn"
+            onClick={handleLogout}
           >
-            <FaCalendarCheck />
-            Book Appointment
+            <FaSignOutAlt />
+            Logout
           </button>
+
         </div>
+
       </div>
 
-      {/* ================= STATS ================= */}
-      <div className="stats-grid">
+      {/* =====================================================
+          MAIN CONTENT
+      ===================================================== */}
 
-        <div className="stat-card">
-          <div className="stat-top">
-            <div className="stat-icon patient-icon">
+      <div className="dashboard-content">
+
+        {/* =====================================================
+            WELCOME BANNER
+        ===================================================== */}
+
+        <div className="welcome-banner">
+
+          <div className="banner-content">
+
+            <div>
+              <span className="banner-small">
+                MEDCARE HOSPITAL
+              </span>
+
+              <h2>
+                Quality Healthcare,
+                <br />
+                Better Life
+              </h2>
+
+              <p>
+                Manage patients, doctors and
+                appointments efficiently.
+              </p>
+
+              <div className="banner-buttons">
+
+                <button
+                  onClick={() => goTo("/patients")}
+                >
+                  <FaPlus />
+                  Add Patient
+                </button>
+
+                <button
+                  onClick={() => goTo("/appointments")}
+                  className="secondary-btn"
+                >
+                  <FaCalendarCheck />
+                  Book Appointment
+                </button>
+
+              </div>
+            </div>
+
+            <div className="banner-icon">
+              <FaHospital />
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* =====================================================
+            STATISTICS
+        ===================================================== */}
+
+        <div className="stats-grid">
+
+          {/* PATIENTS */}
+
+          <div className="stat-card patients-card">
+
+            <div className="stat-icon">
               <FaUserInjured />
             </div>
 
-            <span className="status-label">
-              <FaCircle />
-              Active
-            </span>
+            <div className="stat-info">
+              <span>Total Patients</span>
+              <h3>{patients.length}</h3>
+              <small>
+                Registered patients
+              </small>
+            </div>
+
           </div>
 
-          <div className="stat-number">
-            {loading ? "..." : patients.length}
-          </div>
+          {/* DOCTORS */}
 
-          <div className="stat-title">
-            Total Patients
-          </div>
+          <div className="stat-card doctors-card">
 
-          <div className="stat-bottom">
-            Registered patient records
-            <FaArrowRight />
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-top">
-            <div className="stat-icon doctor-icon">
+            <div className="stat-icon">
               <FaUserMd />
             </div>
 
-            <span className="status-label">
-              <FaCircle />
-              Staff
-            </span>
+            <div className="stat-info">
+              <span>Medical Doctors</span>
+              <h3>{doctors.length}</h3>
+              <small>
+                Available doctors
+              </small>
+            </div>
+
           </div>
 
-          <div className="stat-number">
-            {loading ? "..." : doctors.length}
-          </div>
+          {/* APPOINTMENTS */}
 
-          <div className="stat-title">
-            Medical Doctors
-          </div>
+          <div className="stat-card appointment-card">
 
-          <div className="stat-bottom">
-            Available medical professionals
-            <FaArrowRight />
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-top">
-            <div className="stat-icon appointment-icon">
+            <div className="stat-icon">
               <FaCalendarCheck />
             </div>
 
-            <span className="status-label">
-              <FaCircle />
-              Scheduled
-            </span>
+            <div className="stat-info">
+              <span>Total Appointments</span>
+              <h3>{appointments.length}</h3>
+              <small>
+                Scheduled appointments
+              </small>
+            </div>
+
           </div>
 
-          <div className="stat-number">
-            {loading ? "..." : appointments.length}
-          </div>
+          {/* TODAY VISITS */}
 
-          <div className="stat-title">
-            Total Appointments
-          </div>
+          <div className="stat-card visits-card">
 
-          <div className="stat-bottom">
-            All scheduled appointments
-            <FaArrowRight />
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-top">
-            <div className="stat-icon today-icon">
+            <div className="stat-icon">
               <FaUserClock />
             </div>
 
-            <span className="status-label">
-              <FaCircle />
-              Today
-            </span>
+            <div className="stat-info">
+              <span>Today's Visits</span>
+              <h3>
+                {todayAppointments.length}
+              </h3>
+              <small>
+                Today's appointments
+              </small>
+            </div>
+
           </div>
 
-          <div className="stat-number">
-            {loading ? "..." : todayAppointments.length}
-          </div>
-
-          <div className="stat-title">
-            Today's Visits
-          </div>
-
-          <div className="stat-bottom">
-            Patients visiting today
-            <FaArrowRight />
-          </div>
         </div>
 
-      </div>
+        {/* =====================================================
+            QUICK ACTIONS
+        ===================================================== */}
 
-      {/* ================= QUICK ACTIONS ================= */}
-      <div className="section-heading">
-        <div>
-          <h2>Quick Actions</h2>
-          <p>Frequently used hospital services</p>
-        </div>
-      </div>
-
-      <div className="quick-grid">
-
-        <div
-          className="quick-card"
-          onClick={() => goTo("/patients")}
-        >
-          <div className="quick-icon blue">
-            <FaUserInjured />
-          </div>
+        <div className="section-title">
 
           <div>
-            <h3>Patients</h3>
-            <p>Register & manage patients</p>
+            <h2>Quick Services</h2>
+            <p>
+              Access hospital services quickly
+            </p>
           </div>
 
-          <FaArrowRight className="quick-arrow" />
         </div>
 
-        <div
-          className="quick-card"
-          onClick={() => goTo("/doctors")}
-        >
-          <div className="quick-icon green">
-            <FaUserMd />
-          </div>
+        <div className="quick-actions">
 
-          <div>
-            <h3>Doctors</h3>
-            <p>Manage medical staff</p>
-          </div>
+          {/* PATIENTS */}
 
-          <FaArrowRight className="quick-arrow" />
-        </div>
+          <button
+            className="quick-card"
+            onClick={() => goTo("/patients")}
+          >
 
-        <div
-          className="quick-card"
-          onClick={() => goTo("/appointments")}
-        >
-          <div className="quick-icon purple">
-            <FaCalendarCheck />
-          </div>
+            <div className="quick-icon">
+              <FaUserInjured />
+            </div>
 
-          <div>
-            <h3>Appointments</h3>
-            <p>Schedule patient visits</p>
-          </div>
-
-          <FaArrowRight className="quick-arrow" />
-        </div>
-
-        <div
-          className="quick-card"
-          onClick={() => goTo("/medicines")}
-        >
-          <div className="quick-icon orange">
-            <FaPills />
-          </div>
-
-          <div>
-            <h3>Pharmacy</h3>
-            <p>Manage medicines & stock</p>
-          </div>
-
-          <FaArrowRight className="quick-arrow" />
-        </div>
-
-      </div>
-
-      {/* ================= MAIN CONTENT ================= */}
-      <div className="main-grid">
-
-        {/* TODAY APPOINTMENTS */}
-        <div className="content-card large-card">
-
-          <div className="card-header">
             <div>
-              <h2>Today's Appointments</h2>
-              <p>Scheduled patient visits for today</p>
+              <h3>Patients</h3>
+              <p>Manage patient records</p>
+            </div>
+
+            <FaArrowRight className="arrow" />
+
+          </button>
+
+          {/* DOCTORS */}
+
+          <button
+            className="quick-card"
+            onClick={() => goTo("/doctors")}
+          >
+
+            <div className="quick-icon">
+              <FaUserMd />
+            </div>
+
+            <div>
+              <h3>Doctors</h3>
+              <p>View medical team</p>
+            </div>
+
+            <FaArrowRight className="arrow" />
+
+          </button>
+
+          {/* APPOINTMENTS */}
+
+          <button
+            className="quick-card"
+            onClick={() => goTo("/appointments")}
+          >
+
+            <div className="quick-icon">
+              <FaCalendarCheck />
+            </div>
+
+            <div>
+              <h3>Appointments</h3>
+              <p>Manage appointments</p>
+            </div>
+
+            <FaArrowRight className="arrow" />
+
+          </button>
+
+          {/* PHARMACY */}
+
+          <button
+            className="quick-card"
+            onClick={() => goTo("/medicines")}
+          >
+
+            <div className="quick-icon">
+              <FaPills />
+            </div>
+
+            <div>
+              <h3>Pharmacy</h3>
+              <p>Manage medicines</p>
+            </div>
+
+            <FaArrowRight className="arrow" />
+
+          </button>
+
+        </div>
+
+        {/* =====================================================
+            MAIN GRID
+        ===================================================== */}
+
+        <div className="main-grid">
+
+          {/* =====================================================
+              TODAY'S APPOINTMENTS
+          ===================================================== */}
+
+          <div className="dashboard-box">
+
+            <div className="box-header">
+
+              <div>
+                <h2>Today's Appointments</h2>
+                <p>
+                  Scheduled patient visits
+                </p>
+              </div>
+
+              <button
+                onClick={() =>
+                  goTo("/appointments")
+                }
+              >
+                View All
+              </button>
+
+            </div>
+
+            {todayAppointments.length === 0 ? (
+
+              <div className="empty-state">
+
+                <FaCalendarCheck />
+
+                <h3>
+                  No appointments today
+                </h3>
+
+                <p>
+                  There are no scheduled
+                  appointments for today.
+                </p>
+
+              </div>
+
+            ) : (
+
+              <div className="appointment-list">
+
+                {todayAppointments
+                  .slice(0, 5)
+                  .map((appointment) => (
+
+                    <div
+                      className="appointment-item"
+                      key={appointment._id}
+                    >
+
+                      <div className="appointment-icon">
+                        <FaStethoscope />
+                      </div>
+
+                      <div className="appointment-info">
+
+                        <h4>
+                          {appointment.patientname}
+                        </h4>
+
+                        <p>
+                          Dr.{" "}
+                          {appointment.doctorname}
+                        </p>
+
+                      </div>
+
+                      <div className="appointment-time">
+
+                        <FaClock />
+
+                        {appointment.appointmenttime ||
+                          "Time N/A"}
+
+                      </div>
+
+                    </div>
+
+                  ))}
+
+              </div>
+
+            )}
+
+          </div>
+
+          {/* =====================================================
+              MEDICAL TEAM
+          ===================================================== */}
+
+          <div className="dashboard-box">
+
+            <div className="box-header">
+
+              <div>
+                <h2>Medical Team</h2>
+                <p>
+                  Our available doctors
+                </p>
+              </div>
+
+              <button
+                onClick={() =>
+                  goTo("/doctors")
+                }
+              >
+                View All
+              </button>
+
+            </div>
+
+            <div className="doctor-list">
+
+              {doctors.length === 0 ? (
+
+                <div className="empty-state">
+
+                  <FaUserMd />
+
+                  <h3>
+                    No doctors found
+                  </h3>
+
+                  <p>
+                    Add doctors to see them here.
+                  </p>
+
+                </div>
+
+              ) : (
+
+                doctors
+                  .slice(0, 5)
+                  .map((doctor) => (
+
+                    <div
+                      className="doctor-item"
+                      key={doctor._id}
+                    >
+
+                      <div className="doctor-avatar">
+                        <FaUserMd />
+                      </div>
+
+                      <div className="doctor-info">
+
+                        <h4>
+                          {doctor.name}
+                        </h4>
+
+                        <p>
+                          {doctor.specialization}
+                        </p>
+
+                      </div>
+
+                      <div className="doctor-status">
+                        <FaCircle />
+                        Available
+                      </div>
+
+                    </div>
+
+                  ))
+
+              )}
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* =====================================================
+            LOWER GRID
+        ===================================================== */}
+
+        <div className="lower-grid">
+
+          {/* RECENT PATIENTS */}
+
+          <div className="dashboard-box">
+
+            <div className="box-header">
+
+              <div>
+                <h2>Recent Patients</h2>
+                <p>
+                  Recently registered patients
+                </p>
+              </div>
+
+              <button
+                onClick={() =>
+                  goTo("/patients")
+                }
+              >
+                View All
+              </button>
+
+            </div>
+
+            {recentPatients.length === 0 ? (
+
+              <div className="empty-state">
+
+                <FaUserInjured />
+
+                <h3>
+                  No patients found
+                </h3>
+
+                <p>
+                  Add patients to see records.
+                </p>
+
+              </div>
+
+            ) : (
+
+              <div className="patient-list">
+
+                {recentPatients.map((patient) => (
+
+                  <div
+                    className="patient-item"
+                    key={patient._id}
+                  >
+
+                    <div className="patient-avatar">
+                      <FaUserInjured />
+                    </div>
+
+                    <div className="patient-info">
+
+                      <h4>
+                        {patient.name}
+                      </h4>
+
+                      <p>
+                        {patient.disease}
+                      </p>
+
+                    </div>
+
+                    <div className="patient-phone">
+
+                      <FaPhoneAlt />
+
+                      {patient.phone}
+
+                    </div>
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            )}
+
+          </div>
+
+          {/* DEPARTMENTS */}
+
+          <div className="dashboard-box department-box">
+
+            <div className="box-header">
+
+              <div>
+                <h2>Hospital Departments</h2>
+                <p>
+                  Healthcare departments
+                </p>
+              </div>
+
+              <button
+                onClick={() =>
+                  goTo("/departments")
+                }
+              >
+                View All
+              </button>
+
+            </div>
+
+            <div className="department-list">
+
+              <div className="department-item">
+
+                <div className="department-icon">
+                  <FaHeartbeat />
+                </div>
+
+                <div>
+                  <h4>Cardiology</h4>
+                  <p>
+                    Heart & cardiovascular care
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="department-item">
+
+                <div className="department-icon">
+                  <FaStethoscope />
+                </div>
+
+                <div>
+                  <h4>General Medicine</h4>
+                  <p>
+                    General healthcare services
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="department-item">
+
+                <div className="department-icon">
+                  <FaHospital />
+                </div>
+
+                <div>
+                  <h4>Emergency</h4>
+                  <p>
+                    24/7 emergency services
+                  </p>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* =====================================================
+            UPCOMING APPOINTMENTS
+        ===================================================== */}
+
+        <div className="dashboard-box upcoming-box">
+
+          <div className="box-header">
+
+            <div>
+              <h2>Upcoming Appointments</h2>
+              <p>
+                Recently scheduled appointments
+              </p>
             </div>
 
             <button
-              className="view-btn"
-              onClick={() => goTo("/appointments")}
+              onClick={() =>
+                goTo("/appointments")
+              }
             >
               View All
-              <FaArrowRight />
             </button>
+
           </div>
 
-          {todayAppointments.length === 0 ? (
+          {upcomingAppointments.length === 0 ? (
 
             <div className="empty-state">
 
-              <div className="empty-icon">
-                <FaCalendarCheck />
-              </div>
+              <FaCalendarCheck />
 
-              <h3>No appointments today</h3>
+              <h3>
+                No upcoming appointments
+              </h3>
 
               <p>
-                There are no appointments scheduled for today.
+                Scheduled appointments will appear here.
               </p>
-
-              <button
-                onClick={() => goTo("/appointments")}
-              >
-                <FaPlus />
-                Book Appointment
-              </button>
 
             </div>
 
           ) : (
 
-            <div className="appointment-list">
+            <div className="upcoming-list">
 
-              {todayAppointments.map((item, index) => (
+              {upcomingAppointments.map(
+                (appointment) => (
 
-                <div
-                  className="appointment-row"
-                  key={item._id || index}
-                >
+                  <div
+                    className="upcoming-item"
+                    key={appointment._id}
+                  >
 
-                  <div className="appointment-avatar">
-                    <FaUserInjured />
+                    <div className="upcoming-date">
+
+                      <strong>
+                        {formatDate(
+                          appointment.appointmentdate
+                        )}
+                      </strong>
+
+                      <span>
+                        {appointment.appointmenttime}
+                      </span>
+
+                    </div>
+
+                    <div className="upcoming-details">
+
+                      <h4>
+                        {appointment.patientname}
+                      </h4>
+
+                      <p>
+                        Dr.{" "}
+                        {appointment.doctorname}
+                      </p>
+
+                    </div>
+
+                    <div className="upcoming-icon">
+                      <FaCalendarCheck />
+                    </div>
+
                   </div>
 
-                  <div className="appointment-info">
-                    <h4>
-                      {item.patientname || "Unknown Patient"}
-                    </h4>
-
-                    <span>
-                      <FaUserMd />
-                      {item.doctorname || "Doctor"}
-                    </span>
-                  </div>
-
-                  <div className="appointment-time">
-                    <FaClock />
-                    {item.appointmenttime || "--:--"}
-                  </div>
-
-                  <div className="appointment-status">
-                    Scheduled
-                  </div>
-
-                </div>
-
-              ))}
+                )
+              )}
 
             </div>
 
@@ -452,308 +879,12 @@ function Dashboard() {
 
         </div>
 
-        {/* MEDICAL TEAM */}
-        <div className="content-card">
-
-          <div className="card-header">
-
-            <div>
-              <h2>Medical Team</h2>
-              <p>Hospital doctors</p>
-            </div>
-
-            <button
-              className="view-btn"
-              onClick={() => goTo("/doctors")}
-            >
-              View
-              <FaArrowRight />
-            </button>
-
-          </div>
-
-          <div className="doctor-list">
-
-            {doctors.length === 0 ? (
-
-              <div className="small-empty">
-                <FaUserMd />
-                <p>No doctors available</p>
-              </div>
-
-            ) : (
-
-              doctors.slice(0, 5).map((doctor, index) => (
-
-                <div
-                  className="doctor-row"
-                  key={doctor._id || index}
-                >
-
-                  <div className="doctor-avatar">
-                    <FaUserMd />
-                  </div>
-
-                  <div className="doctor-info">
-
-                    <h4>
-                      Dr. {doctor.name || "Doctor"}
-                    </h4>
-
-                    <p>
-                      {doctor.specialization ||
-                        doctor.specilization ||
-                        "Medical Specialist"}
-                    </p>
-
-                  </div>
-
-                  <span className="online-dot">
-                    <FaCircle />
-                  </span>
-
-                </div>
-
-              ))
-
-            )}
-
-          </div>
-
-        </div>
-
       </div>
 
-      {/* ================= LOWER SECTION ================= */}
-      <div className="lower-grid">
+      {/* =====================================================
+          CSS
+      ===================================================== */}
 
-        {/* RECENT PATIENTS */}
-        <div className="content-card">
-
-          <div className="card-header">
-
-            <div>
-              <h2>Recent Patients</h2>
-              <p>Recently registered patients</p>
-            </div>
-
-            <button
-              className="view-btn"
-              onClick={() => goTo("/patients")}
-            >
-              View
-              <FaArrowRight />
-            </button>
-
-          </div>
-
-          <div className="patient-list">
-
-            {recentPatients.length === 0 ? (
-
-              <div className="small-empty">
-                <FaUserInjured />
-                <p>No patients registered</p>
-              </div>
-
-            ) : (
-
-              recentPatients.map((patient, index) => (
-
-                <div
-                  className="patient-row"
-                  key={patient._id || index}
-                >
-
-                  <div className="patient-avatar">
-                    {getInitial(patient.name)}
-                  </div>
-
-                  <div className="patient-info">
-
-                    <h4>
-                      {patient.name || "Patient"}
-                    </h4>
-
-                    <p>
-                      {patient.disease || "General Checkup"}
-                    </p>
-
-                  </div>
-
-                  <div className="patient-phone">
-
-                    <FaPhoneAlt />
-
-                    {patient.phone || "N/A"}
-
-                  </div>
-
-                </div>
-
-              ))
-
-            )}
-
-          </div>
-
-        </div>
-
-        {/* DEPARTMENTS */}
-        <div className="content-card">
-
-          <div className="card-header">
-
-            <div>
-              <h2>Departments</h2>
-              <p>Hospital departments</p>
-            </div>
-
-          </div>
-
-          <div className="department-grid">
-
-            <div className="department-item">
-              <div className="department-icon blue">
-                <FaStethoscope />
-              </div>
-
-              <span>General Medicine</span>
-            </div>
-
-            <div className="department-item">
-              <div className="department-icon green">
-                <FaHeartbeat />
-              </div>
-
-              <span>Cardiology</span>
-            </div>
-
-            <div className="department-item">
-              <div className="department-icon purple">
-                <FaNotesMedical />
-              </div>
-
-              <span>Laboratory</span>
-            </div>
-
-            <div className="department-item">
-              <div className="department-icon orange">
-                <FaPills />
-              </div>
-
-              <span>Pharmacy</span>
-            </div>
-
-            <div className="department-item">
-              <div className="department-icon red">
-                <FaHospital />
-              </div>
-
-              <span>Emergency</span>
-            </div>
-
-            <div className="department-item">
-              <div className="department-icon teal">
-                <FaUserMd />
-              </div>
-
-              <span>Neurology</span>
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* ================= UPCOMING APPOINTMENTS ================= */}
-      <div className="content-card upcoming-card">
-
-        <div className="card-header">
-
-          <div>
-            <h2>Upcoming Appointments</h2>
-            <p>Next scheduled patient visits</p>
-          </div>
-
-          <button
-            className="view-btn"
-            onClick={() => goTo("/appointments")}
-          >
-            Manage Appointments
-            <FaArrowRight />
-          </button>
-
-        </div>
-
-        {upcomingAppointments.length === 0 ? (
-
-          <div className="small-empty">
-            <FaCalendarCheck />
-            <p>No upcoming appointments</p>
-          </div>
-
-        ) : (
-
-          <div className="upcoming-list">
-
-            {upcomingAppointments.map((item, index) => (
-
-              <div
-                className="upcoming-row"
-                key={item._id || index}
-              >
-
-                <div className="upcoming-date">
-
-                  <strong>
-                    {new Date(item.appointmentdate).getDate()}
-                  </strong>
-
-                  <span>
-                    {new Date(
-                      item.appointmentdate
-                    ).toLocaleDateString("en-IN", {
-                      month: "short",
-                    })}
-                  </span>
-
-                </div>
-
-                <div className="upcoming-patient">
-
-                  <h4>
-                    {item.patientname || "Patient"}
-                  </h4>
-
-                  <p>
-                    <FaUserMd />
-                    {item.doctorname || "Doctor"}
-                  </p>
-
-                </div>
-
-                <div className="upcoming-time">
-                  <FaClock />
-                  {item.appointmenttime || "--:--"}
-                </div>
-
-                <span className="scheduled-badge">
-                  Scheduled
-                </span>
-
-              </div>
-
-            ))}
-
-          </div>
-
-        )}
-
-      </div>
-
-      {/* ================= CSS ================= */}
       <style>{`
 
         * {
@@ -761,164 +892,180 @@ function Dashboard() {
         }
 
         .dashboard-page {
-          width: 100%;
-          padding: 24px;
-          background: #f6f8fb;
           min-height: 100vh;
-          color: #172033;
+          background: #f4f7fb;
           font-family: Arial, Helvetica, sans-serif;
+          color: #172033;
         }
 
         /* HEADER */
 
         .dashboard-header {
+          min-height: 82px;
+          background: #ffffff;
+          border-bottom: 1px solid #e5e9f0;
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          margin-bottom: 22px;
+          justify-content: space-between;
+          padding: 15px 30px;
           gap: 20px;
         }
 
-        .welcome-small {
-          color: #2563eb;
-          font-size: 13px;
-          font-weight: 700;
-          display: flex;
-          align-items: center;
-          gap: 7px;
-          margin-bottom: 7px;
-        }
-
-        .dashboard-header h1 {
+        .header-left h1 {
           margin: 0;
-          font-size: 27px;
-          font-weight: 800;
+          font-size: 23px;
+          font-weight: 700;
           color: #172033;
         }
 
-        .dashboard-header p {
+        .header-left p {
           margin: 7px 0 0;
-          color: #7a8496;
-          font-size: 14px;
+          color: #6b7280;
+          font-size: 13px;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+        }
+
+        .header-left p svg {
+          color: #1d9b70;
         }
 
         .header-right {
           display: flex;
           align-items: center;
-          gap: 12px;
-        }
-
-        .live-status,
-        .date-box {
-          background: white;
-          border: 1px solid #e7ebf2;
-          border-radius: 10px;
-          padding: 10px 13px;
-          font-size: 12px;
-          font-weight: 700;
-          display: flex;
-          align-items: center;
-          gap: 7px;
-          box-shadow: 0 3px 12px rgba(20, 35, 60, 0.04);
+          gap: 14px;
         }
 
         .live-status {
-          color: #16a34a;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: #15956c;
+          font-size: 13px;
+          font-weight: 600;
         }
 
         .live-status svg {
-          font-size: 7px;
+          font-size: 8px;
         }
 
-        .date-box {
+        .header-date {
+          display: flex;
+          align-items: center;
+          gap: 7px;
           color: #667085;
+          font-size: 13px;
+          padding-right: 4px;
+        }
+
+        /* LOGOUT */
+
+        .logout-btn {
+          border: none;
+          background: #ef4444;
+          color: white;
+          padding: 10px 17px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: 0.2s ease;
+        }
+
+        .logout-btn:hover {
+          background: #dc2626;
+          transform: translateY(-1px);
+        }
+
+        /* CONTENT */
+
+        .dashboard-content {
+          padding: 28px 30px 45px;
+          max-width: 1500px;
+          margin: auto;
         }
 
         /* BANNER */
 
-        .hospital-banner {
-          position: relative;
-          overflow: hidden;
+        .welcome-banner {
           background: linear-gradient(
-            100deg,
-            #1d4ed8,
-            #2563eb 60%,
-            #3b82f6
+            135deg,
+            #0f766e,
+            #155e75
           );
           border-radius: 16px;
-          padding: 22px 24px;
-          display: flex;
-          align-items: center;
-          gap: 18px;
-          margin-bottom: 22px;
-          color: white;
-          box-shadow: 0 10px 25px rgba(37, 99, 235, 0.18);
-        }
-
-        .hospital-banner::after {
-          content: "";
-          position: absolute;
-          width: 190px;
-          height: 190px;
-          border-radius: 50%;
-          right: -55px;
-          top: -85px;
-          border: 30px solid rgba(255,255,255,0.08);
-        }
-
-        .banner-icon {
-          min-width: 58px;
-          height: 58px;
-          background: rgba(255,255,255,0.16);
-          border-radius: 14px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          font-size: 27px;
+          overflow: hidden;
+          margin-bottom: 25px;
+          box-shadow: 0 8px 25px rgba(15, 118, 110, 0.12);
         }
 
         .banner-content {
-          flex: 1;
-          position: relative;
-          z-index: 2;
+          min-height: 235px;
+          padding: 32px 38px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .banner-small {
+          color: #a7f3d0;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 1.5px;
         }
 
         .banner-content h2 {
-          margin: 0;
-          font-size: 21px;
+          color: white;
+          font-size: 32px;
+          line-height: 1.2;
+          margin: 10px 0;
         }
 
         .banner-content p {
-          margin: 6px 0 0;
-          font-size: 13px;
-          color: rgba(255,255,255,0.85);
+          color: #d8f3ef;
+          margin: 0 0 20px;
+          font-size: 14px;
         }
 
-        .banner-actions {
+        .banner-buttons {
           display: flex;
-          gap: 9px;
-          position: relative;
-          z-index: 3;
+          gap: 10px;
+          flex-wrap: wrap;
         }
 
-        .banner-actions button {
+        .banner-buttons button {
           border: none;
-          border-radius: 9px;
-          padding: 11px 14px;
           background: white;
-          color: #1d4ed8;
-          font-weight: 700;
+          color: #0f766e;
+          padding: 11px 16px;
+          border-radius: 8px;
           cursor: pointer;
+          font-weight: 600;
           display: flex;
           align-items: center;
-          gap: 7px;
-          font-size: 12px;
+          gap: 8px;
         }
 
-        .banner-actions .light-btn {
-          background: rgba(255,255,255,0.14);
+        .banner-buttons .secondary-btn {
+          background: rgba(255,255,255,0.15);
           color: white;
-          border: 1px solid rgba(255,255,255,0.3);
+          border: 1px solid rgba(255,255,255,0.35);
+        }
+
+        .banner-icon {
+          width: 150px;
+          height: 150px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.08);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: rgba(255,255,255,0.85);
+          font-size: 72px;
         }
 
         /* STATS */
@@ -926,149 +1073,103 @@ function Dashboard() {
         .stats-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 16px;
-          margin-bottom: 26px;
+          gap: 18px;
+          margin-bottom: 30px;
         }
 
         .stat-card {
           background: white;
-          border: 1px solid #e8ecf2;
-          border-radius: 14px;
-          padding: 18px;
-          box-shadow: 0 4px 16px rgba(20, 35, 60, 0.045);
-          transition: 0.2s ease;
-        }
-
-        .stat-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 9px 24px rgba(20, 35, 60, 0.08);
-        }
-
-        .stat-top {
+          border-radius: 13px;
+          padding: 21px;
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          gap: 16px;
+          border: 1px solid #e7ebf1;
+          box-shadow: 0 3px 12px rgba(20, 30, 50, 0.04);
         }
 
         .stat-icon {
-          width: 42px;
-          height: 42px;
-          border-radius: 11px;
+          width: 52px;
+          height: 52px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 18px;
+          font-size: 22px;
+          background: #e8f6f2;
+          color: #0f766e;
+          flex-shrink: 0;
         }
 
-        .patient-icon {
-          background: #eaf2ff;
-          color: #2563eb;
-        }
-
-        .doctor-icon {
-          background: #eafaf0;
-          color: #16a34a;
-        }
-
-        .appointment-icon {
-          background: #f3edff;
-          color: #7c3aed;
-        }
-
-        .today-icon {
-          background: #fff4e7;
-          color: #ea580c;
-        }
-
-        .status-label {
-          font-size: 10px;
-          color: #7c8799;
-          display: flex;
-          gap: 5px;
-          align-items: center;
-        }
-
-        .status-label svg {
-          font-size: 6px;
-          color: #16a34a;
-        }
-
-        .stat-number {
-          margin-top: 15px;
-          font-size: 29px;
-          font-weight: 800;
-          color: #182235;
-        }
-
-        .stat-title {
-          margin-top: 2px;
-          font-size: 13px;
-          font-weight: 700;
-          color: #566174;
-        }
-
-        .stat-bottom {
-          border-top: 1px solid #eef1f5;
-          margin-top: 13px;
-          padding-top: 10px;
-          color: #8a94a5;
-          font-size: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .stat-bottom svg {
-          color: #9ba5b5;
-        }
-
-        /* SECTION */
-
-        .section-heading {
-          margin: 4px 0 12px;
-        }
-
-        .section-heading h2 {
-          margin: 0;
-          font-size: 18px;
-        }
-
-        .section-heading p {
-          margin: 4px 0 0;
+        .stat-info span {
+          display: block;
+          color: #6b7280;
           font-size: 12px;
-          color: #8992a2;
+          margin-bottom: 5px;
         }
 
-        /* QUICK */
+        .stat-info h3 {
+          margin: 0;
+          font-size: 25px;
+          color: #172033;
+        }
 
-        .quick-grid {
+        .stat-info small {
+          color: #98a2b3;
+          font-size: 11px;
+        }
+
+        /* SECTION TITLE */
+
+        .section-title {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 15px;
+        }
+
+        .section-title h2 {
+          margin: 0;
+          font-size: 20px;
+        }
+
+        .section-title p {
+          margin: 5px 0 0;
+          color: #7b8494;
+          font-size: 13px;
+        }
+
+        /* QUICK ACTIONS */
+
+        .quick-actions {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 13px;
-          margin-bottom: 24px;
+          gap: 16px;
+          margin-bottom: 30px;
         }
 
         .quick-card {
+          border: 1px solid #e5e9f0;
           background: white;
-          border: 1px solid #e8ecf2;
-          border-radius: 13px;
-          padding: 15px;
+          border-radius: 12px;
+          padding: 18px;
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 13px;
+          text-align: left;
           cursor: pointer;
-          transition: 0.2s;
+          transition: 0.2s ease;
         }
 
         .quick-card:hover {
-          border-color: #cfd8e7;
           transform: translateY(-2px);
+          box-shadow: 0 7px 20px rgba(20,30,50,0.08);
         }
 
-        .quick-icon,
-        .department-icon {
-          width: 40px;
-          height: 40px;
+        .quick-icon {
+          width: 43px;
+          height: 43px;
+          background: #e8f6f2;
+          color: #0f766e;
           border-radius: 10px;
           display: flex;
           align-items: center;
@@ -1076,416 +1177,264 @@ function Dashboard() {
           flex-shrink: 0;
         }
 
-        .blue {
-          background: #eaf2ff;
-          color: #2563eb;
-        }
-
-        .green {
-          background: #eafaf0;
-          color: #16a34a;
-        }
-
-        .purple {
-          background: #f3edff;
-          color: #7c3aed;
-        }
-
-        .orange {
-          background: #fff4e7;
-          color: #ea580c;
-        }
-
-        .red {
-          background: #ffeded;
-          color: #dc2626;
-        }
-
-        .teal {
-          background: #e8fbfa;
-          color: #0f766e;
-        }
-
         .quick-card h3 {
-          margin: 0;
-          font-size: 13px;
-          color: #202a3b;
+          margin: 0 0 4px;
+          font-size: 14px;
         }
 
         .quick-card p {
-          margin: 4px 0 0;
-          color: #8a94a5;
-          font-size: 10px;
-        }
-
-        .quick-arrow {
-          margin-left: auto;
-          color: #a5adba;
+          margin: 0;
+          color: #7b8494;
           font-size: 11px;
         }
 
-        /* CONTENT */
+        .arrow {
+          margin-left: auto;
+          color: #98a2b3;
+          font-size: 12px;
+        }
+
+        /* MAIN GRID */
 
         .main-grid {
           display: grid;
-          grid-template-columns: 1.65fr 1fr;
-          gap: 18px;
-          margin-bottom: 18px;
+          grid-template-columns: 1.3fr 1fr;
+          gap: 20px;
+          margin-bottom: 20px;
         }
 
         .lower-grid {
           display: grid;
-          grid-template-columns: 1.2fr 1fr;
-          gap: 18px;
-          margin-bottom: 18px;
+          grid-template-columns: 1.3fr 1fr;
+          gap: 20px;
+          margin-bottom: 20px;
         }
 
-        .content-card {
+        .dashboard-box {
           background: white;
-          border: 1px solid #e8ecf2;
-          border-radius: 14px;
-          padding: 18px;
-          box-shadow: 0 4px 16px rgba(20, 35, 60, 0.04);
+          border: 1px solid #e5e9f0;
+          border-radius: 13px;
+          padding: 21px;
+          box-shadow: 0 3px 12px rgba(20,30,50,0.04);
         }
 
-        .card-header {
+        .box-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 10px;
-          margin-bottom: 16px;
+          border-bottom: 1px solid #edf0f4;
+          padding-bottom: 15px;
+          margin-bottom: 8px;
         }
 
-        .card-header h2 {
+        .box-header h2 {
           margin: 0;
-          font-size: 16px;
-          color: #202a3b;
+          font-size: 17px;
         }
 
-        .card-header p {
-          margin: 4px 0 0;
-          font-size: 11px;
-          color: #8a94a5;
+        .box-header p {
+          margin: 5px 0 0;
+          color: #7b8494;
+          font-size: 12px;
         }
 
-        .view-btn {
-          border: none;
+        .box-header button {
           background: transparent;
-          color: #2563eb;
-          font-weight: 700;
-          font-size: 11px;
+          border: none;
+          color: #0f766e;
+          font-size: 12px;
+          font-weight: 600;
           cursor: pointer;
+        }
+
+        /* EMPTY */
+
+        .empty-state {
+          min-height: 180px;
           display: flex;
           align-items: center;
-          gap: 6px;
+          justify-content: center;
+          flex-direction: column;
+          text-align: center;
+          color: #98a2b3;
+        }
+
+        .empty-state svg {
+          font-size: 31px;
+          margin-bottom: 10px;
+          color: #c5ccd6;
+        }
+
+        .empty-state h3 {
+          margin: 0 0 5px;
+          font-size: 14px;
+          color: #667085;
+        }
+
+        .empty-state p {
+          margin: 0;
+          font-size: 11px;
         }
 
         /* APPOINTMENTS */
 
-        .appointment-list {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .appointment-row {
+        .appointment-item,
+        .doctor-item,
+        .patient-item,
+        .department-item,
+        .upcoming-item {
           display: flex;
           align-items: center;
-          padding: 12px 0;
-          border-top: 1px solid #eef1f5;
           gap: 12px;
+          padding: 13px 5px;
+          border-bottom: 1px solid #f0f2f5;
         }
 
-        .appointment-avatar {
-          width: 38px;
-          height: 38px;
-          border-radius: 10px;
-          background: #eef5ff;
-          color: #2563eb;
+        .appointment-item:last-child,
+        .doctor-item:last-child,
+        .patient-item:last-child,
+        .department-item:last-child,
+        .upcoming-item:last-child {
+          border-bottom: none;
+        }
+
+        .appointment-icon {
+          width: 39px;
+          height: 39px;
+          background: #e8f6f2;
+          color: #0f766e;
+          border-radius: 9px;
           display: flex;
-          justify-content: center;
           align-items: center;
+          justify-content: center;
         }
 
         .appointment-info {
           flex: 1;
         }
 
-        .appointment-info h4 {
+        .appointment-info h4,
+        .doctor-info h4,
+        .patient-info h4,
+        .department-item h4,
+        .upcoming-details h4 {
           margin: 0 0 4px;
-          font-size: 12px;
+          font-size: 13px;
         }
 
-        .appointment-info span {
-          color: #8a94a5;
-          font-size: 10px;
-          display: flex;
-          align-items: center;
-          gap: 5px;
+        .appointment-info p,
+        .doctor-info p,
+        .patient-info p,
+        .department-item p,
+        .upcoming-details p {
+          margin: 0;
+          color: #7b8494;
+          font-size: 11px;
         }
 
         .appointment-time {
-          font-size: 11px;
-          color: #596579;
           display: flex;
           align-items: center;
           gap: 5px;
-          min-width: 75px;
-        }
-
-        .appointment-status,
-        .scheduled-badge {
-          padding: 5px 8px;
-          border-radius: 20px;
-          background: #eafaf0;
-          color: #168344;
-          font-size: 9px;
-          font-weight: 700;
-        }
-
-        /* EMPTY */
-
-        .empty-state {
-          text-align: center;
-          padding: 28px 10px;
-        }
-
-        .empty-icon {
-          width: 55px;
-          height: 55px;
-          margin: auto;
-          border-radius: 50%;
-          background: #eef5ff;
-          color: #2563eb;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          font-size: 22px;
-        }
-
-        .empty-state h3 {
-          margin: 12px 0 5px;
-          font-size: 14px;
-        }
-
-        .empty-state p {
-          margin: 0 0 13px;
-          color: #8a94a5;
+          color: #0f766e;
           font-size: 11px;
-        }
-
-        .empty-state button {
-          border: none;
-          background: #2563eb;
-          color: white;
-          border-radius: 8px;
-          padding: 9px 13px;
-          font-size: 11px;
-          font-weight: 700;
-          cursor: pointer;
-        }
-
-        .empty-state button svg {
-          margin-right: 5px;
+          font-weight: 600;
         }
 
         /* DOCTORS */
 
-        .doctor-list {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .doctor-row {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px 0;
-          border-top: 1px solid #eef1f5;
-        }
-
-        .doctor-avatar {
-          width: 36px;
-          height: 36px;
-          background: #eafaf0;
-          color: #16a34a;
-          border-radius: 9px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-
-        .doctor-info {
-          flex: 1;
-        }
-
-        .doctor-info h4 {
-          margin: 0 0 3px;
-          font-size: 12px;
-        }
-
-        .doctor-info p {
-          margin: 0;
-          color: #8992a2;
-          font-size: 10px;
-        }
-
-        .online-dot {
-          color: #22c55e;
-          font-size: 7px;
-        }
-
-        .small-empty {
-          text-align: center;
-          padding: 30px 10px;
-          color: #9aa3b2;
-        }
-
-        .small-empty svg {
-          font-size: 25px;
-          margin-bottom: 8px;
-        }
-
-        .small-empty p {
-          margin: 0;
-          font-size: 11px;
-        }
-
-        /* PATIENTS */
-
-        .patient-row {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px 0;
-          border-top: 1px solid #eef1f5;
-        }
-
+        .doctor-avatar,
         .patient-avatar {
-          width: 36px;
-          height: 36px;
-          background: #eef5ff;
-          color: #2563eb;
+          width: 39px;
+          height: 39px;
           border-radius: 50%;
+          background: #e8f6f2;
+          color: #0f766e;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 12px;
-          font-weight: 800;
+          flex-shrink: 0;
         }
 
+        .doctor-info,
         .patient-info {
           flex: 1;
         }
 
-        .patient-info h4 {
-          margin: 0 0 3px;
-          font-size: 12px;
-        }
-
-        .patient-info p {
-          margin: 0;
-          color: #8a94a5;
+        .doctor-status {
           font-size: 10px;
-        }
-
-        .patient-phone {
-          font-size: 9px;
-          color: #7d8797;
+          color: #15956c;
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 5px;
+        }
+
+        .doctor-status svg {
+          font-size: 7px;
+        }
+
+        /* PATIENT */
+
+        .patient-phone {
+          font-size: 10px;
+          color: #667085;
+          display: flex;
+          align-items: center;
+          gap: 5px;
         }
 
         /* DEPARTMENT */
 
-        .department-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 9px;
-        }
-
-        .department-item {
+        .department-icon {
+          width: 40px;
+          height: 40px;
+          background: #edf7ff;
+          color: #2774c7;
+          border-radius: 9px;
           display: flex;
           align-items: center;
-          gap: 9px;
-          padding: 9px;
-          border: 1px solid #eef1f5;
-          border-radius: 10px;
-        }
-
-        .department-icon {
-          width: 32px;
-          height: 32px;
-          font-size: 13px;
-        }
-
-        .department-item span {
-          font-size: 10px;
-          font-weight: 700;
-          color: #596579;
+          justify-content: center;
+          flex-shrink: 0;
         }
 
         /* UPCOMING */
 
         .upcoming-list {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .upcoming-row {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          padding: 12px 0;
-          border-top: 1px solid #eef1f5;
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 0 20px;
         }
 
         .upcoming-date {
-          width: 46px;
-          height: 46px;
-          border-radius: 10px;
-          background: #eef5ff;
-          color: #2563eb;
+          width: 100px;
           display: flex;
           flex-direction: column;
-          justify-content: center;
-          align-items: center;
+          gap: 4px;
         }
 
         .upcoming-date strong {
-          font-size: 17px;
-          line-height: 17px;
+          font-size: 11px;
+          color: #172033;
         }
 
         .upcoming-date span {
-          font-size: 9px;
-          text-transform: uppercase;
+          font-size: 10px;
+          color: #0f766e;
         }
 
-        .upcoming-patient {
+        .upcoming-details {
           flex: 1;
         }
 
-        .upcoming-patient h4 {
-          margin: 0 0 4px;
-          font-size: 12px;
-        }
-
-        .upcoming-patient p {
-          margin: 0;
-          color: #8a94a5;
-          font-size: 10px;
+        .upcoming-icon {
+          width: 35px;
+          height: 35px;
+          border-radius: 8px;
+          background: #e8f6f2;
+          color: #0f766e;
           display: flex;
           align-items: center;
-          gap: 5px;
-        }
-
-        .upcoming-time {
-          color: #5f6b7d;
-          font-size: 10px;
-          display: flex;
-          align-items: center;
-          gap: 5px;
+          justify-content: center;
         }
 
         /* RESPONSIVE */
@@ -1493,7 +1442,7 @@ function Dashboard() {
         @media (max-width: 1100px) {
 
           .stats-grid,
-          .quick-grid {
+          .quick-actions {
             grid-template-columns: repeat(2, 1fr);
           }
 
@@ -1506,58 +1455,67 @@ function Dashboard() {
 
         @media (max-width: 700px) {
 
-          .dashboard-page {
-            padding: 14px;
-          }
-
           .dashboard-header {
+            padding: 15px;
             flex-direction: column;
             align-items: flex-start;
           }
 
           .header-right {
             width: 100%;
-          }
-
-          .date-box,
-          .live-status {
-            flex: 1;
-          }
-
-          .hospital-banner {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-
-          .banner-actions {
-            width: 100%;
+            justify-content: space-between;
             flex-wrap: wrap;
+          }
+
+          .dashboard-content {
+            padding: 18px 15px 30px;
+          }
+
+          .banner-content {
+            padding: 25px;
+          }
+
+          .banner-icon {
+            display: none;
+          }
+
+          .banner-content h2 {
+            font-size: 25px;
           }
 
           .stats-grid,
-          .quick-grid {
+          .quick-actions {
             grid-template-columns: 1fr;
           }
 
-          .appointment-row {
-            flex-wrap: wrap;
-          }
-
-          .appointment-status {
-            margin-left: 50px;
+          .upcoming-list {
+            grid-template-columns: 1fr;
           }
 
           .patient-phone {
             display: none;
           }
 
-          .upcoming-row {
-            flex-wrap: wrap;
+        }
+
+        @media (max-width: 450px) {
+
+          .header-date {
+            display: none;
+          }
+
+          .logout-btn {
+            padding: 9px 12px;
+          }
+
+          .header-left h1 {
+            font-size: 19px;
           }
 
         }
 
       `}</style>
+
     </div>
   );
 }

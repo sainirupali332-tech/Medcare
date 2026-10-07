@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
+import Login from "./Login";
 
 import Patients from "./pages/Patients";
 import Doctors from "./pages/Doctors";
@@ -43,9 +44,12 @@ function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* Dashboard */}
+        {/* LOGIN */}
+        <Route path="/" element={<Login />} />
+
+        {/* DASHBOARD */}
         <Route
-          path="/"
+          path="/dashboard"
           element={
             <Layout>
               <Dashboard />
@@ -53,7 +57,7 @@ function App() {
           }
         />
 
-        {/* Patients */}
+        {/* PATIENTS */}
         <Route
           path="/patients"
           element={
@@ -63,7 +67,7 @@ function App() {
           }
         />
 
-        {/* Doctors */}
+        {/* DOCTORS */}
         <Route
           path="/doctors"
           element={
@@ -73,7 +77,7 @@ function App() {
           }
         />
 
-        {/* Appointments */}
+        {/* APPOINTMENTS */}
         <Route
           path="/appointments"
           element={
@@ -83,7 +87,7 @@ function App() {
           }
         />
 
-        {/* Medicines */}
+        {/* MEDICINES */}
         <Route
           path="/medicines"
           element={
@@ -93,17 +97,7 @@ function App() {
           }
         />
 
-        {/* Beds */}
-        <Route
-          path="/beds"
-          element={
-            <Layout>
-              <Beds />
-            </Layout>
-          }
-        />
-
-        {/* Billing */}
+        {/* BILLING */}
         <Route
           path="/billing"
           element={
@@ -113,9 +107,9 @@ function App() {
           }
         />
 
-        {/* Departments */}
+        {/* DEPARTMENTS */}
         <Route
-          path="/department"
+          path="/departments"
           element={
             <Layout>
               <Department />
@@ -123,7 +117,17 @@ function App() {
           }
         />
 
-        {/* Laboratory */}
+        {/* BEDS */}
+        <Route
+          path="/beds"
+          element={
+            <Layout>
+              <Beds />
+            </Layout>
+          }
+        />
+
+        {/* LABORATORY */}
         <Route
           path="/laboratory"
           element={
@@ -133,7 +137,7 @@ function App() {
           }
         />
 
-        {/* Settings */}
+        {/* SETTINGS */}
         <Route
           path="/settings"
           element={
