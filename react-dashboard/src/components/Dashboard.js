@@ -11,7 +11,6 @@ import {
   FaClock,
   FaStethoscope,
   FaPills,
-  FaNotesMedical,
   FaHeartbeat,
   FaUserClock,
   FaCircle,
